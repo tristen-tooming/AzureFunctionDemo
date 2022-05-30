@@ -41,18 +41,18 @@ namespace queWorker
         }
 
 
-        [FunctionName("queTaskOrchestrator_ServiceBusStart")]
-        public static async Task<HttpResponseMessage> HttpStart(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestMessage req,
+        [FunctionName("queTaskOrchestratorStarter")]
+        public static async Task<> Run(
+            [ServiceBusTrigger("myqueue", Connection = "ServiceBusConnector")] string message, string messageId,
             [DurableClient] IDurableOrchestrationClient starter,
             ILogger log)
         {
+            log.LogInformation($"Working with message: {messageId}");
+
             // Function input comes from the request content.
             string instanceId = await starter.StartNewAsync("queTaskOrchestrator", null);
 
             log.LogInformation($"Started orchestration with ID = '{instanceId}'.");
-
-            return starter.CreateCheckStatusResponse(req, instanceId);
         }
     }
 }
