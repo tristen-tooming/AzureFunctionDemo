@@ -3,6 +3,9 @@
 - Needs Service Bus connection string in ```settings.json```: ```"ServiceBusConnectionAppSetting": "XXX"```
 - Resource: POST api/emailAPI
 
+#### queTaskOrchestrator
+- remove entity from the Service Bus connection string
+
 
 #### Blob Notes
 Storage account for every user or container or just blobs?
