@@ -24,7 +24,7 @@ namespace emailProcessorWorker
         [FunctionName("emailProcessorWorker")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
-            [ServiceBus("emailque", Connection = "ServiceBusConnectionAppSetting")] IAsyncCollector<ServiceBusMessage> OutMessages,
+            [ServiceBus("emailque", Connection = "ServiceBusConnector")] IAsyncCollector<ServiceBusMessage> OutMessages,
             ILogger log)
         {
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
