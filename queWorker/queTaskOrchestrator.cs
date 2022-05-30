@@ -7,50 +7,45 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
 
+
+using System.IO;
+using Azure.Messaging.ServiceBus;
+using Azure.Storage.Blobs;
+
 namespace queWorker
 {
     public static class queTaskOrchestrator
     {
         [FunctionName("queTaskOrchestrator")]
-        public static async Task<List<string>> RunOrchestrator(
+        public static async Task<string> RunOrchestrator(
             [OrchestrationTrigger] IDurableOrchestrationContext context)
         {
-            var outputs = new List<string>();
+            var queueItem = context.GetInput<ServiceBusMessage>();
+            await context.CallActivityAsync<string>("queTaskOrchestrator_ToBlob", "Test");
 
-            // Replace "hello" with the name of your Durable Activity Function.
-            outputs.Add(await context.CallActivityAsync<string>("queTaskOrchestrator_Hello", "Tokyo"));
-            outputs.Add(await context.CallActivityAsync<string>("queTaskOrchestrator_Hello", "Seattle"));
-            outputs.Add(await context.CallActivityAsync<string>("queTaskOrchestrator_Hello", "London"));
+            string completed = "completed";
 
-            // returns ["Hello Tokyo!", "Hello Seattle!", "Hello London!"]
-            return outputs;
+            return completed;
         }
 
-        [FunctionName("queTaskOrchestrator_Blob")]
-        public static string SayHello([ActivityTrigger] string name, ILogger log)
+        [FunctionName("queTaskOrchestrator_ToBlob")]
+        public static string ToBlob(
+            [ActivityTrigger] IDurableActivityContext context)
         {
-            log.LogInformation($"Saying hello to {name}.");
-            return $"Hello {name}!";
-        }
 
-        [FunctionName("queTaskOrchestrator_MySQL")]
-        public static string SayHello([ActivityTrigger] string name, ILogger log)
-        {
-            log.LogInformation($"Saying hello to {name}.");
-            return $"Hello {name}!";
+            return null;
         }
-
 
         [FunctionName("queTaskOrchestratorStarter")]
-        public static async Task<> Run(
-            [ServiceBusTrigger("myqueue", Connection = "ServiceBusConnector")] string message, string messageId,
+        public static async Task Run(
+            [ServiceBusTrigger("emailque", Connection = "ServiceBusConnector")] ServiceBusMessage queItem,
             [DurableClient] IDurableOrchestrationClient starter,
             ILogger log)
         {
-            log.LogInformation($"Working with message: {messageId}");
+            //log.LogInformation($"Working with message: {messageId}");
 
             // Function input comes from the request content.
-            string instanceId = await starter.StartNewAsync("queTaskOrchestrator", null);
+            string instanceId = await starter.StartNewAsync<ServiceBusMessage>("queTaskOrchestrator", null, queItem);
 
             log.LogInformation($"Started orchestration with ID = '{instanceId}'.");
         }
