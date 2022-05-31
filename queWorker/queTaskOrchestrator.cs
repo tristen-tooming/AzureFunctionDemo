@@ -7,15 +7,16 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
 
-
+using System;
 using System.IO;
+using System.Text;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.ServiceBus;
 using Azure.Storage.Blobs;
+using Azure.Storage;
 using Newtonsoft.Json;
 
 using System.Configuration;
-using Microsoft.Azure.Storage;
 
 namespace queWorker
 {
@@ -26,10 +27,11 @@ namespace queWorker
             [OrchestrationTrigger] IDurableOrchestrationContext context,
             ILogger log)
         {
-            var data_string = context.GetInput<string>();
+            var messageString = context.GetInput<string>();
+            dynamic message = JsonConvert.DeserializeObject<EmailPOCO>(messageString); // Validates the message and converts field values to EmailPOCO schema
 
-            log.LogInformation($"Orchestrated message '{queueItem}'.");
-            await context.CallActivityAsync<string>("queTaskOrchestrator_ToBlob", null, data_string);
+            log.LogInformation($"Orchestrated message '{message.Email}'.");
+            await context.CallActivityAsync<string>("queTaskOrchestrator_ToBlob", message);
 
             string completed = "completed";
 
@@ -37,25 +39,32 @@ namespace queWorker
         }
 
         [FunctionName("queTaskOrchestrator_ToBlob")]
+        // TODO: just pass string to the function and upload it
         public static string ToBlob(
-            [ActivityTrigger] IDurableActivityContext context)
-            // [Blob("samples/{name}", FileAccess.Write)] Stream myBlob) // Can we use name from the context.GetInput<Data>?.Name
-            //http://dontcodetired.com/blog/post/Understanding-Azure-Durable-Functions-Part-6-Activity-Functions-with-Additional-Input-Bindings
+            [ActivityTrigger] EmailPOCO message,
+            [Blob("emails", FileAccess.Write, Connection = "BlobConnector")] BlobContainerClient outputContainer,
+            ILogger log)
         {
-            var data_string = context.GetInput<string>();
-
-            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
-                CloudConfigurationManager.GetSetting("StorageConnectionString"));
-
-            client = storageAccount.CreateCloudBlobClient();
-            container = client.GetContainerReference("Demo");
-            await container.CreateIfNotExistsAsync();
-            blob = container.GetBlockBlobReference(name);
-            blob.Properties.ContentType = "application/json";
-            blob.UploadFromStreamAsync(new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)))); // Use <>
+            log.LogInformation($"Handling account: {message.Email}");
+            log.LogInformation($"Working in Blob container: {outputContainer.Name}");
+            // TODO: Log for each day and email
+            BlobClient blob = outputContainer.GetBlobClient($"{message.Email}_{DateTime.Today.ToString()}.json");
+            var content = Encoding.UTF8.GetBytes(message.Email);
+            using(var ms = new MemoryStream(content))
+                blob.Upload(ms);
             
-            return null;
+            return null; // Needed?
         }
+
+        [FunctionName("queTaskOrchestrator_ToMySQL")]
+        public static string ToBlob(
+            [ActivityTrigger] EmailPOCO message,
+            [Blob("emails", FileAccess.Write, Connection = "BlobConnector")] BlobContainerClient outputContainer,
+            ILogger log)
+        {   
+            return null; // Needed?
+        }
+
 
         [FunctionName("queTaskOrchestratorStarter")]
             public static async Task Run(
