@@ -17,11 +17,11 @@ https://github.com/mspnp/cloud-design-patterns/blob/master/async-request-reply/s
 When used EmailPOCO email in HttpTrigger line it returned List as null
 */
 
-namespace emailProcessorWorker
+namespace emailProcesserWorker
 {
-    public static class emailProcessorWorker
+    public static class emailProcesserWorker
     {
-        [FunctionName("emailProcessorWorker")]
+        [FunctionName("emailProcesserWorker")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
             [ServiceBus("emailque", Connection = "ServiceBusConnector")] IAsyncCollector<ServiceBusMessage> OutMessages,
