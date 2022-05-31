@@ -12,8 +12,7 @@ Storage account for every user or container or just blobs?
 
 
 #### TODO:
-
-- Create Azure functions / Logic apps event when blob is uploaded (In the storage account)
+- Simplify code: Functions in to the same folder because we use the EmailPOCO? How the namespace work in c#?
 
 ## Implementation
 #### EmailAPI
