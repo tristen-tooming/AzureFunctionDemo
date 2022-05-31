@@ -1,7 +1,7 @@
 
 using System.Collections.Generic;
 
-namespace emailProcesserWorker
+namespace emailProcessWorker
 {
     public class EmailPOCO
     {

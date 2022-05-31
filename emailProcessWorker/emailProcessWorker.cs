@@ -17,26 +17,25 @@ https://github.com/mspnp/cloud-design-patterns/blob/master/async-request-reply/s
 When used EmailPOCO email in HttpTrigger line it returned List as null
 */
 
-namespace emailProcesserWorker
+namespace emailProcessWorker
 {
-    public static class emailProcesserWorker
+    public static class emailProcessWorker
     {
-        [FunctionName("emailProcesserWorker")]
+        [FunctionName("emailProcessWorker")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
             [ServiceBus("emailque", Connection = "ServiceBusConnector")] IAsyncCollector<ServiceBusMessage> OutMessages,
             ILogger log)
         {
+            log.LogInformation("EmailProcessorWorker Started");
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             dynamic data = JsonConvert.DeserializeObject<EmailPOCO>(requestBody); // Validates the message and converts field values to EmailPOCO schema
-            string email = JsonConvert.SerializeObject(data);
+            string messagePayload = JsonConvert.SerializeObject(data);
 
-            log.LogInformation(email);
-
-            var messagePayload = JsonConvert.SerializeObject(email);
             var message = new ServiceBusMessage(messagePayload);
             message.ApplicationProperties["RequestSubmittedAt"] = DateTime.Now;
                 
+            log.LogInformation($"Send message {messagePayload}");
             await OutMessages.AddAsync(message);
 
             return (ActionResult) new AcceptedResult();
