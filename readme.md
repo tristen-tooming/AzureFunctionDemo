@@ -19,7 +19,7 @@ Takes in in body:
 {
     "Key": "XXX",
     "Email": "XXX",
-    "Attributes": ["one", "two", ..., "n"]
+    "Attributes": ["one", "two", "n"]
 }
 ```
 
