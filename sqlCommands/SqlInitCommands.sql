@@ -23,7 +23,7 @@ DROP PROCEDURE IF EXISTS tbl_insert //
 CREATE PROCEDURE tbl_insert(
 	in _SenderKey VARCHAR(255),
 	in _Email VARCHAR(255),
-	in _SendDate DATETIME(3),
+	in _SendDate DATE,
 	in _Milliseconds FLOAT(8, 4),
 	in _EmailAttribute VARCHAR(255)
 )
@@ -38,14 +38,14 @@ CREATE PROCEDURE tbl_insert(
 		-- Counter for attributes
 	  	SELECT count(*)
 	  	FROM EmailAttributes
-	  	WHERE SenderKey = _SenderKey and DATE(SendDate) = DATE(_SendDate)
+	  	WHERE SenderKey = _SenderKey and SendDate = DATE(_SendDate) -- TODO: Date can be removed
 	  	INTO @attribute_count;
 	  
 	  	-- Return data if 10 attributes
 	  	IF (@attribute_count = 10) THEN
 	  		SELECT EmailAttribute
 	  		FROM EmailAttributes
-	  		WHERE SenderKey = _SenderKey and DATE(SendDate) = DATE(_SendDate)
+	  		WHERE SenderKey = _SenderKey and SendDate = DATE(_SendDate) -- TODO: Date can be removed
 	  		ORDER BY Milliseconds;
 	  	END IF;
 	  

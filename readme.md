@@ -26,6 +26,7 @@ Needs:
 
 #### TODO:
 - Simplify code: Functions in to the same folder because we use the `MessagePOCO`?
+- Check if DATE() can be removed from MySQL scripts
 
 ## Implementation
 #### EmailAPI
