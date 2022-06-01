@@ -7,8 +7,9 @@ CREATE TABLE Emails (
 
 CREATE Table EmailAttributes (
 	SenderKey VARCHAR(255) NOT NULL,
-    SendDate DATETIME(3) NOT NULL,
-    EmailAttribute VARCHAR(255),
+    SendDate DATE NOT NULL,
+    Milliseconds FLOAT(8, 4) NOT NULL, -- 86 400 000 milliseconds per day
+    EmailAttribute VARCHAR(255) NOT NULL,
     CONSTRAINT FK_HID FOREIGN KEY (SenderKey) REFERENCES Emails(SenderKey)
 );
 
@@ -23,6 +24,7 @@ CREATE PROCEDURE tbl_insert(
 	in _SenderKey VARCHAR(255),
 	in _Email VARCHAR(255),
 	in _SendDate DATETIME(3),
+	in _Milliseconds FLOAT(8, 4),
 	in _EmailAttribute VARCHAR(255)
 )
 
@@ -31,21 +33,22 @@ CREATE PROCEDURE tbl_insert(
 	
 		-- Index would return SQL Error [1062] [230000]
 		INSERT IGNORE INTO Emails VALUES (_SenderKey, _Email);
-		INSERT INTO EmailAttributes VALUES (_SenderKey, _SendDate, _EmailAttribute);
+		INSERT INTO EmailAttributes VALUES (_SenderKey, _SendDate, _Milliseconds,_EmailAttribute);
 		
 		-- Counter for attributes
 	  	SELECT count(*)
 	  	FROM EmailAttributes
 	  	WHERE SenderKey = _SenderKey and DATE(SendDate) = DATE(_SendDate)
-	  	ORDER BY UNIX_TIMESTAMP(SendDate) DESC
 	  	INTO @attribute_count;
 	  
 	  	-- Return data if 10 attributes
 	  	IF (@attribute_count = 10) THEN
-	  		SELECT EmailAttribute FROM EmailAttributes WHERE SenderKey = _SenderKey and DATE(SendDate) = DATE(_SendDate);
+	  		SELECT EmailAttribute
+	  		FROM EmailAttributes
+	  		WHERE SenderKey = _SenderKey and DATE(SendDate) = DATE(_SendDate)
+	  		ORDER BY Milliseconds;
 	  	END IF;
 	  
 	END //
 
 delimiter ;
-	
