@@ -3,14 +3,14 @@ CREATE TABLE Emails (
     SenderKey VARCHAR(255) NOT NULL,
     Email VARCHAR(255) NOT NULL,
     PRIMARY KEY (SenderKey)
-)
+);
 
 CREATE Table EmailAttributes (
 	SenderKey VARCHAR(255) NOT NULL,
-    SendDate Date NOT NULL,
+    SendDate DATETIME(3) NOT NULL,
     EmailAttribute VARCHAR(255),
     CONSTRAINT FK_HID FOREIGN KEY (SenderKey) REFERENCES Emails(SenderKey)
-)
+);
 
 -- Index
 CREATE UNIQUE INDEX idx_email_attributes_all on EmailAttributes(SenderKey, SendDate, EmailAttribute);
@@ -19,10 +19,10 @@ CREATE UNIQUE INDEX idx_email_attributes_all on EmailAttributes(SenderKey, SendD
 delimiter //
 DROP PROCEDURE IF EXISTS tbl_insert //
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `emailDemo`.`tbl_insert`(
+CREATE PROCEDURE tbl_insert(
 	in _SenderKey VARCHAR(255),
 	in _Email VARCHAR(255),
-	in _SendDate Date,
+	in _SendDate DATETIME(3),
 	in _EmailAttribute VARCHAR(255)
 )
 
