@@ -6,6 +6,7 @@
     - MySQL: 8
     - .NEt: 6 (in-process)
 - Scripts for initializing MySQL in folder `.\sqlCommands`
+- In blob we need container `emails` (Should just check existence in the code)
 
 #### EmailAPI
 Needs:
