@@ -28,13 +28,28 @@ namespace emailProcessWorker
             ILogger log)
         {
             log.LogInformation("EmailProcessorWorker Started");
+
+            string timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd");
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             dynamic data = JsonConvert.DeserializeObject<EmailPOCO>(requestBody); // Validates the message and converts field values to EmailPOCO schema
-            string messagePayload = JsonConvert.SerializeObject(data);
 
-            var message = new ServiceBusMessage(messagePayload);
-            log.LogInformation($"Send message {messagePayload}");
-            await OutMessages.AddAsync(message);
+            // Millisecond timestamp ensures order in DB
+            foreach (string attribute in data.Attributes)
+            {
+                MessagePOCO raw_message = new MessagePOCO
+                {
+                    Key = data.Key,
+                    Email = data.Email,
+                    Date = timestamp,
+                    Milliseconds = DateTime.Now.TimeOfDay.TotalMilliseconds,
+                    SingleAttribute = attribute
+                };
+                string messagePayload = JsonConvert.SerializeObject(raw_message);
+                var message = new ServiceBusMessage(messagePayload);
+                log.LogInformation($"Send message {messagePayload}");
+                await OutMessages.AddAsync(message);
+
+            }
 
             return (ActionResult) new AcceptedResult();
         }
