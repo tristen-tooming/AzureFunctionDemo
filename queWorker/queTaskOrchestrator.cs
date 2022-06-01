@@ -34,10 +34,11 @@ namespace queWorker
             ILogger log)
         {
             var messageString = context.GetInput<string>();
-            dynamic message = JsonConvert.DeserializeObject<EmailPOCO>(messageString); // Validates the message and converts field values to EmailPOCO schema
+            dynamic message = JsonConvert.DeserializeObject<MessagePOCO>(messageString); // Validates the message and converts field values to EmailPOCO schema
 
             log.LogInformation($"Orchestrated message '{message.Email}'.");
-            await context.CallActivityAsync<string>("queTaskOrchestrator_ToBlob", message); // Take just the message string
+            // Handle blob exists
+            // await context.CallActivityAsync<string>("queTaskOrchestrator_ToBlob", message); // Take just the message string
             var message_attributes = await context.CallActivityAsync<string>("queTaskOrchestrator_ToMySQL", message);
 
             if (message_attributes is not null)
@@ -48,7 +49,7 @@ namespace queWorker
                 Best regards, Millisecond”
                 ";
                 await context.CallActivityAsync<string>("queTaskOrchestrator_parsed_ToTable", parsed_message);
-                await context.CallActivityAsync<string>("queTaskOrchestrator_ToTable", parsed_message);
+                await context.CallActivityAsync<string>("queTaskOrchestrator_parsed_ToBlob", parsed_message);
             }
 
             log.LogInformation("Orchestrator task completed");
@@ -61,14 +62,14 @@ namespace queWorker
         [FunctionName("queTaskOrchestrator_ToBlob")]
         // TODO: just pass string to the function and upload it
         public static string ToBlob(
-            [ActivityTrigger] EmailPOCO message,
+            [ActivityTrigger] MessagePOCO message,
             [Blob("emails", FileAccess.Write, Connection = "BlobConnector")] BlobContainerClient outputContainer,
             ILogger log)
         {
             log.LogInformation($"Handling account: {message.Email}");
             log.LogInformation($"Working in Blob container: {outputContainer.Name}");
             // TODO: Log for each day and email
-            BlobClient blob = outputContainer.GetBlobClient($"{message.Email}_{DateTime.Today.ToString()}.json");
+            BlobClient blob = outputContainer.GetBlobClient($"{message.Email}_{message.Date}.json");
             var content = Encoding.UTF8.GetBytes(message.Email);
             using(var ms = new MemoryStream(content))
                 blob.Upload(ms);
@@ -78,7 +79,7 @@ namespace queWorker
 
         [FunctionName("queTaskOrchestrator_ToMySQL")]
         public static string ToMySQL(
-            [ActivityTrigger] EmailPOCO message,
+            [ActivityTrigger] MessagePOCO message,
             ILogger log)
         {   
             string message_attributes = null;
@@ -134,7 +135,7 @@ namespace queWorker
             return null;
         }
 
-        [FunctionName("queTaskOrchestrator_parsed_ToTable")]
+        [FunctionName("queTaskOrchestrator_parsed_ToBlob")]
         public static string ParsedToBlob(
             [ActivityTrigger] string parsed_message,
             ILogger log
