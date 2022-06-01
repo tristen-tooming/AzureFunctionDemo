@@ -1,32 +1,14 @@
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.DurableTask;
-using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.Azure.WebJobs.Host;
-using Microsoft.Extensions.Logging;
-
 using System;
 using System.IO;
 using System.Text;
-using Azure.Messaging.ServiceBus;
-using Microsoft.Azure.ServiceBus;
-using Azure.Storage.Blobs;
-using Azure.Storage;
-using Newtonsoft.Json;
-
-using System.Configuration;
-
 using System.Data;
-using MySql.Data;
+using System.Threading.Tasks;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.DurableTask;
+using Microsoft.Extensions.Logging;
+using Azure.Storage.Blobs;
 using MySql.Data.MySqlClient;
-using System.Data.Common;
-using System.Data.SqlClient;
-
-using Azure.Storage.Blobs.Models;
-using Azure.Storage.Blobs.Specialized;
-using System.Runtime.Serialization.Json;
+using Newtonsoft.Json;
 
 namespace queWorker
 {
