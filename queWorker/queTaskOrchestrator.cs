@@ -37,23 +37,23 @@ namespace queWorker
             [OrchestrationTrigger] IDurableOrchestrationContext context,
             ILogger log)
         {
-            var messageString = context.GetInput<string>();
+            string messageString = context.GetInput<string>();
             dynamic message = JsonConvert.DeserializeObject<MessagePOCO>(messageString); // Validates the message and converts field values to EmailPOCO schema
 
             // Handle blob exists
             await context.CallActivityAsync<string>("queTaskOrchestrator_ToBlob", message); // Take just the message string
-            var message_attributes = await context.CallActivityAsync<string>("queTaskOrchestrator_ToMySQL", message);
+            string messageAttributes = await context.CallActivityAsync<string>("queTaskOrchestrator_ToMySQL", message);
 
-            if (message_attributes is not null)
+            if (messageAttributes is not null)
             {
-                log.LogInformation($"Hitted items: {message_attributes}");
-                string parsed_message = $@"
-                “Congratulate!\n
-                We have received following 10 unique attributes from you {message_attributes}\n
+                string parsedMessage = $@"
+                “Congratulate!
+                We have received following 10 unique attributes from you{messageAttributes}
                 Best regards, Millisecond”
                 ";
-                await context.CallActivityAsync<string>("queTaskOrchestrator_parsed_ToTable", parsed_message);
-                await context.CallActivityAsync<string>("queTaskOrchestrator_parsed_ToBlob", parsed_message);
+                log.LogInformation(parsedMessage);
+                await context.CallActivityAsync<string>("queTaskOrchestratorCongratulateToTable", parsedMessage);
+                await context.CallActivityAsync<string>("queTaskOrchestratorCongratulateToBlob", parsedMessage);
             }
 
             log.LogInformation("Orchestrator task completed");
@@ -73,34 +73,12 @@ namespace queWorker
             log.LogInformation($"Handling account: {message.Email}");
             log.LogInformation($"Working in Blob container: {outputContainer.Name}");
 
-            // Json list. This list is used later on to add existing content if blob already exists
-            List<MessagePOCO> MessageList = new List<MessagePOCO>();
-            MessageList.Add(message);
-            BlobClient blob = outputContainer.GetBlobClient($"{message.Email}/{message.Date}.json");
-
-            log.LogInformation(blob.AccountName);
-            log.LogInformation(blob.Name);
-            log.LogInformation(blob.Uri.ToString());
+            BlobClient blob = outputContainer.GetBlobClient($"{message.Email}/{message.Date}/{message.Milliseconds}.json");
+            toBlob = JsonConvert.SerializeObject(message);
 
             // Setting blob headers (Not working here at least, throws blob does not exists error)
             // BlobHttpHeaders headers = new BlobHttpHeaders{ContentType = "application/json"};
             // blob.SetHttpHeaders(headers);
-
-            // Blob mangling
-            if (blob.Exists())
-            {       
-                BlobDownloadResult blobData = blob.DownloadContent();
-                string blobStringData = blobData.Content.ToString();
-                log.LogInformation(blobStringData);
-                List<MessagePOCO> blobContent = JsonConvert.DeserializeObject<List<MessagePOCO>>(blobStringData);
-                blobContent.AddRange(MessageList); // Adding message in to list
-                toBlob = JsonConvert.SerializeObject(blobContent);
-                blob.Delete(); // Only way? If blob exists we cannot upload to it. This should be in try catch block and upload old content if error
-            }
-            else
-            {
-                toBlob = JsonConvert.SerializeObject(MessageList);
-            }
 
             // Upload to Blob Storage
             var content = Encoding.UTF8.GetBytes(toBlob);
@@ -176,21 +154,44 @@ namespace queWorker
             return message_attributes;
         }
 
-        [FunctionName("queTaskOrchestrator_parsed_ToTable")]
-        public static string ParsedToTable(
-            [ActivityTrigger] string parsed_message,
+        [FunctionName("queTaskOrchestratorCongratulateToTable")]
+        public static string CongratulateToTable(
+            [ActivityTrigger] IDurableActivityContext context,
             ILogger log
         )
         {
+            string parsed_message = context.GetInput<string>();
+            var sqlConnectionString = Environment.GetEnvironmentVariable("MySQLConnector");
+
+            using (var conn = new MySqlConnection(sqlConnectionString))
+            {
+                log.LogInformation("Opening MySQL connection");
+                conn.Open();
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "INSERT INTO SendEmails VALUES(?parsedEmail)";
+                    cmd.Parameters.AddWithValue("?parsedEmail", parsed_message);
+                    cmd.ExecuteNonQuery();
+                }
             return null;
+            }
         }
 
-        [FunctionName("queTaskOrchestrator_parsed_ToBlob")]
-        public static string ParsedToBlob(
-            [ActivityTrigger] string parsed_message,
+        [FunctionName("queTaskOrchestratorCongratulateToBlob")]
+        public static string CongratulateToBlob(
+            [ActivityTrigger] IDurableActivityContext context,
+            [Blob("parsedemails", FileAccess.Write, Connection = "BlobConnector")] BlobContainerClient outputContainer,
             ILogger log
         )
-        {
+        { 
+            string parsed_message = context.GetInput<string>();
+            string guid = Guid.NewGuid().ToString();
+            BlobClient blob = outputContainer.GetBlobClient($"{guid}.txt");
+
+            var content = Encoding.UTF8.GetBytes(parsed_message);
+            using(var ms = new MemoryStream(content))
+                blob.Upload(ms);
+
             return null;
         }
 

@@ -52,10 +52,10 @@ Input trigger from Service Bus orchestrates following functions:
     - Stored as json list and days email attributes are append to that list
 - _func_ ToMySQL `EmailPOCO` -> `[]` or `[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]`
     - Stored MySQL procedure handles data insertion and checks if 10 email attributes exits. Returns them in FIFO order.
-    - __There can be a bug if inserting multiple items at the sametime__
-        - Shows in logs that list of 10 attributes is returned multiple times?
 - _func_ CongratulateToBlob `parsed_message` -> `null`
+    - Sends data to SendEmails Table on MySQL db
 - _func_ CongratulateToTable `parsed_message` -> `null`
+    - Sends data to `<GUID>.txt` file in parsedemails container
 
 ## Next steps
 - For the managed identity: https://docs.microsoft.com/en-us/azure/azure-functions/functions-identity-based-connections-tutorial-2

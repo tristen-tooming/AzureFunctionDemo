@@ -13,6 +13,11 @@ CREATE Table EmailAttributes (
     CONSTRAINT FK_HID FOREIGN KEY (SenderKey) REFERENCES Emails(SenderKey)
 );
 
+CREATE TABLE SendEmails (
+	SendEmail VARCHAR(5000) NOT NULL	
+);
+
+
 -- Index
 CREATE UNIQUE INDEX idx_email_attributes_all on EmailAttributes(SenderKey, SendDate, EmailAttribute);
 	
