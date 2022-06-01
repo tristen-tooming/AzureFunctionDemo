@@ -70,10 +70,11 @@ namespace queWorker
             ILogger log)
         {
             string toBlob = null;
+            string guid = Guid.NewGuid().ToString();
             log.LogInformation($"Handling account: {message.Email}");
             log.LogInformation($"Working in Blob container: {outputContainer.Name}");
 
-            BlobClient blob = outputContainer.GetBlobClient($"{message.Email}/{message.Date}/{message.Milliseconds}.json");
+            BlobClient blob = outputContainer.GetBlobClient($"{message.Email}/{message.Date}/{guid}.json");
             toBlob = JsonConvert.SerializeObject(message);
 
             // Setting blob headers (Not working here at least, throws blob does not exists error)
