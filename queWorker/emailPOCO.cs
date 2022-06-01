@@ -8,7 +8,8 @@ namespace queWorker
     {
         public string Key { get; set; }
         public string Email { get; set; }
-        public DateTime Stamp { get; set; } 
-        public List<string> Attributes { get; set; }
+        public DateTime Date { get; set; } 
+        public Double Milliseconds { get; set; }
+        public string Attribute { get; set; }
     }
 }

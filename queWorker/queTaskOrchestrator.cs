@@ -100,7 +100,8 @@ namespace queWorker
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@_SenderKey", message.Key);
                     cmd.Parameters.AddWithValue("@_Email", message.Email);
-                    cmd.Parameters.AddWithValue("@_SendDate", message.Stamp);
+                    cmd.Parameters.AddWithValue("@_SendDate", message.Date);
+                    cmd.Parameters.AddWithValue("@_Milliseconds", message.Milliseconds);
                     cmd.Parameters.AddWithValue("@_EmailAttribute", "");
 
                     MySqlDataReader reader = cmd.ExecuteReader();
