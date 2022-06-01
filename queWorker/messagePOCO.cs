@@ -1,7 +1,7 @@
 
 using System;
 
-namespace emailProcessWorker
+namespace queWorker
 {
     public class MessagePOCO
     {
