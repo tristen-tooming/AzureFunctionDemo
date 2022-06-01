@@ -21,7 +21,7 @@ CREATE TABLE SendEmails (
 -- Index
 CREATE UNIQUE INDEX idx_email_attributes_all on EmailAttributes(SenderKey, SendDate, EmailAttribute);
 	
--- Procedure for inserting data and counting email attributes.
+-- Procedure for inserting data and counting email attributes
 delimiter //
 DROP PROCEDURE IF EXISTS tbl_insert //
 
