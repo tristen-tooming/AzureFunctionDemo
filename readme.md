@@ -8,7 +8,7 @@
 - Scripts for initializing MySQL in folder `.\sqlCommands`
 - In blob we need container `emails` and `parsedemails` (Should just check the existence in the code)
 
-#### EmailAPI
+#### emailProcessWorker
 Needs:
 ```Json
 "ServiceBusConnectionAppSetting": "XXX"
