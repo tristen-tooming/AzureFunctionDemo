@@ -19,6 +19,18 @@ Storage account for every user or container or just blobs?
 - Runs as in-process
 - Uses async pattern to send message to the que and http response to the user
 
+#### Service Bus Orchestrator
+
+Input trigger from Service Bus orchestrates following functions:
+
+- Blob (message in)
+    - <email><date>.json
+- MySQL (message in)
+    - Stored MySQL procedure handles data insertion and checks if 10 email attributes exits. Returns them in FIFO order.
+- Message (10 attributes in)
+    - Blob
+    - Table
+
 ## Next steps
 - For the managed identity: https://docs.microsoft.com/en-us/azure/azure-functions/functions-identity-based-connections-tutorial-2
 - Convert in-process to isolated process
