@@ -8,11 +8,16 @@
 - Scripts for initializing MySQL in folder `.\sqlCommands`
 - In blob we need container `emails` and `parsedemails` (Should just check the existence in the code)
 
-#### emailProcessWorker
-Needs:
+Into appliation settings:
 ```Json
-"ServiceBusConnectionAppSetting": ""
+        "ServiceBusConnector": "Endpoint=;SharedAccessKeyName=;SharedAccessKey=;EntityPath=",
+
+        "BlobConnector": "DefaultEndpointsProtocol=https;AccountName=;EndpointSuffix=core.windows.net",
+
+        "MySQLConnector": "Server=;Port=3309;Database=;Uid=user@database;Pwd=;"
 ```
+
+#### emailProcessWorker
 
 Takes in body:
 ```Json
@@ -24,15 +29,6 @@ Takes in body:
 ```
 
 Returns `202`
-
-#### queTaskOrchestrator
-Needs:
-```Json
-"ServiceBusConnector": "",
-"BlobConnector": "",
-"MySQLConnector": ""
-```
-(Remove entity from the Service Bus connection string)
 
 
 #### TODO:
