@@ -11,15 +11,15 @@
 #### emailProcessWorker
 Needs:
 ```Json
-"ServiceBusConnectionAppSetting": "XXX"
+"ServiceBusConnectionAppSetting": ""
 ```
 
 Takes in in body:
 ```Json
 {
-    "Key": <string>,
-    "Email": <string>,
-    "Attributes": [<string>, <string>, <string>]
+    "Key": "",
+    "Email": "",
+    "Attributes": ["", "", ""]
 }
 ```
 
@@ -28,9 +28,9 @@ Returns `202`
 #### queTaskOrchestrator
 Needs:
 ```Json
-"ServiceBusConnector": <string>,
-"BlobConnector": <string>,
-"MySQLConnector": <string>
+"ServiceBusConnector": "",
+"BlobConnector": "",
+"MySQLConnector": ""
 ```
 (Remove entity from the Service Bus connection string)
 
