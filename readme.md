@@ -17,9 +17,9 @@ Needs:
 Takes in in body:
 ```Json
 {
-    "Key": "XXX",
-    "Email": "XXX",
-    "Attributes": ["one", "two", "n"]
+    "Key": <string>,
+    "Email": <string>,
+    "Attributes": [<string>, <string>, <string>]
 }
 ```
 
@@ -28,9 +28,9 @@ Returns `202`
 #### queTaskOrchestrator
 Needs:
 ```Json
-"ServiceBusConnector": "XXX",
-"BlobConnector": "XXX",
-"MySQLConnector": "XXX"
+"ServiceBusConnector": <string>,
+"BlobConnector": <string>,
+"MySQLConnector": <string>
 ```
 (Remove entity from the Service Bus connection string)
 
