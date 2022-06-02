@@ -14,7 +14,7 @@ Needs:
 "ServiceBusConnectionAppSetting": ""
 ```
 
-Takes in in body:
+Takes in body:
 ```Json
 {
     "Key": "",
