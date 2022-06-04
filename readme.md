@@ -30,10 +30,23 @@ Takes in body:
 
 Returns `202`
 
+#### V1 vs V2
+V1 inserts message per attribute to the Service Bus and V2 insert full message to the bus.
+
+V1
+- Milliseconds key can be used in the blob naming
+- Uses more resources
+- Messages are in blob per revieved attribute
+- Can this be quicker? -- Connections are opened in pararrel, but REST API endpoint is then slower
+
+V2
+- Less resources and quicker
+- Messages are in the blob as recieved
 
 #### TODO:
 - Simplify code: Functions in to the same folder because we use the `MessagePOCO`?
 - Check if DATE() can be removed from MySQL scripts
+- API endpoint works quicker because no loop
 
 ## Implementation
 #### EmailAPI
