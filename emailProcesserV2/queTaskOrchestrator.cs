@@ -20,17 +20,19 @@ namespace emailProcessWorker
             ILogger log)
         {
             string messageString = context.GetInput<string>();
-            dynamic message = JsonConvert.DeserializeObject<MessagePOCO>(messageString); // Validates the message and converts field values to EmailPOCO schema
+            EmailPOCO message = JsonConvert.DeserializeObject<EmailPOCO>(messageString); // Validates the message and converts field values to EmailPOCO schema
 
-            // Handle blob exists
+            // Handle blob
             await context.CallActivityAsync<string>("queTaskOrchestrator_ToBlob", message); // Take just the message string
-            string messageAttributes = await context.CallActivityAsync<string>("queTaskOrchestrator_ToMySQL", message);
 
-            if (messageAttributes is not null)
+            // TODO: message to email POCO in function
+            string tenAttributes = await context.CallActivityAsync<string>("queTaskOrchestrator_ToMySQL", message);
+
+            if (tenAttributes is not null)
             {
                 string parsedMessage = $@"
                 “Congratulate!
-                We have received following 10 unique attributes from you{messageAttributes}
+                We have received following 10 unique attributes from you{tenAttributes}
                 Best regards, Millisecond”
                 ";
                 log.LogInformation(parsedMessage);
@@ -47,7 +49,7 @@ namespace emailProcessWorker
 
         [FunctionName("queTaskOrchestrator_ToBlob")]
         public static string ToBlob(
-            [ActivityTrigger] MessagePOCO message,
+            [ActivityTrigger] EmailPOCO message,
             [Blob("emails", FileAccess.Write, Connection = "BlobConnector")] BlobContainerClient outputContainer,
             ILogger log)
         {
@@ -56,7 +58,7 @@ namespace emailProcessWorker
             log.LogInformation($"Handling account: {message.Email}");
             log.LogInformation($"Working in Blob container: {outputContainer.Name}");
 
-            BlobClient blob = outputContainer.GetBlobClient($"{message.Email}/{message.Date}/{guid}.json");
+            BlobClient blob = outputContainer.GetBlobClient($"{message.Email}/{message.SendDate}/{guid}.json");
             toBlob = JsonConvert.SerializeObject(message);
 
             // Setting blob headers (Not working here at least, throws blob does not exists error)
@@ -73,68 +75,63 @@ namespace emailProcessWorker
 
         [FunctionName("queTaskOrchestrator_ToMySQL")]
         public static string ToMySQL(
-            [ActivityTrigger] MessagePOCO message,
+            [ActivityTrigger] EmailPOCO message,
             ILogger log)
         {   
-            string message_attributes = null;
+            string tenAttributes = null;
             var sqlConnectionString = Environment.GetEnvironmentVariable("MySQLConnector");
 
             // MySQL
-            /* TODO: Implement try catch block. 
-            If duplicate entry: System.Private.CoreLib: Exception while executing function: testSQL. MySql.Data: Duplicate entry 'banana-2020-02-02-10' for key 'emailattributes.idx_email_attributes_all'.
-            */
-            using (var conn = new MySqlConnection(sqlConnectionString))
-            {
-                log.LogInformation("Opening MySQL connection");
-                conn.Open();
-
-                // Connection will be closed by the 'using' block
-                try
+            foreach (string messageAttribute in message.Attributes)
+            {   
+                // New connection needs to be opened after ExecuteReader?
+                using (var conn = new MySqlConnection(sqlConnectionString))
                 {
-                    using (var cmd = conn.CreateCommand())
-                    {   
-                        log.LogInformation($"email: {message.Email}, date: {message.Date}; Inserting item: {message.SingleAttribute}");
-                        cmd.CommandText = @"tbl_insert";
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@_SenderKey", message.Key);
-                        cmd.Parameters.AddWithValue("@_Email", message.Email);
-                        cmd.Parameters.AddWithValue("@_SendDate", message.Date);
-                        cmd.Parameters.AddWithValue("@_Milliseconds", message.Milliseconds);
-                        cmd.Parameters.AddWithValue("@_EmailAttribute", message.SingleAttribute);
+                    log.LogInformation("Opening MySQL connection");
+                    conn.Open();
 
-                        MySqlDataReader reader = cmd.ExecuteReader();
+                    log.LogInformation($"email: {message.Email}, date: {message.SendDate}; Inserting item(s): {message.Attributes}");
 
-                        if (reader.HasRows)
-                        {
-                            log.LogInformation($"email: {message.Email}, date: {message.Date}; 10 email attributes sent today. Processing them...");
-                            while (reader.Read())
-                                {
-                                    message_attributes = message_attributes + ", " + reader.GetString(0);
-                                }
-                        }
-                        else 
-                        {
-                            log.LogInformation($"email: {message.Email}, date: {message.Date}; Todays attribute count <10 or >10");
-                        }
-
-                    }
-                }
-                // Needs better error handler
-                catch (MySqlException ex)
-                {
-                    int errorcode = ex.Number;
-                    if (errorcode != 1062) // If not duplicate data by database index
+                    // To Sql per attribute
+                    try
                     {
-                        log.LogCritical(errorcode.ToString());
-                        log.LogCritical(ex.GetBaseException().ToString());
+                        using (var cmd = conn.CreateCommand())
+                        {   
+                            cmd.CommandText = @"tbl_insert";
+                            cmd.CommandType = CommandType.StoredProcedure;
+                            cmd.Parameters.AddWithValue("@_SenderKey", message.Key);
+                            cmd.Parameters.AddWithValue("@_Email", message.Email);
+                            cmd.Parameters.AddWithValue("@_SendDate", message.SendDate);
+                            cmd.Parameters.AddWithValue("@_EmailAttribute", messageAttribute);
+
+                            MySqlDataReader reader = cmd.ExecuteReader();
+
+                            // Has 10 attributes
+                            if (reader.HasRows)
+                            {
+                                log.LogInformation($"email: {message.Email}, date: {message.SendDate}; 10 email attributes sent today. Processing them...");
+                                while (reader.Read())
+                                    {
+                                        // Parse string
+                                        tenAttributes = tenAttributes + ", " + reader.GetString(0);
+                                    }
+                            }
+                        }
                     }
-                    else
+                    catch (MySqlException ex)
                     {
-                        log.LogInformation($"email: {message.Email}, date: {message.Date}; item '{message.SingleAttribute}' already in database");
+                        // 1062 is for duplicate data in database by index
+                        int errorcode = ex.Number;
+                        if (errorcode != 1062)
+                        {   
+                            // TODO: Throw exception
+                            log.LogCritical(errorcode.ToString());
+                            log.LogCritical(ex.GetBaseException().ToString());
+                        }
                     }
                 }
             }
-            return message_attributes;
+            return tenAttributes;
         }
 
         [FunctionName("queTaskOrchestratorCongratulateToTable")]
@@ -178,6 +175,7 @@ namespace emailProcessWorker
             return null;
         }
 
+        // Starter
         [FunctionName("queTaskOrchestratorStarter")]
             public static async Task Run(
             // Message message should be used because Json Serializer is build in and we can use 
